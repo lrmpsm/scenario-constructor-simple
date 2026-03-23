@@ -1,73 +1,145 @@
-# React + TypeScript + Vite
+# Scenar Editor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Scenar Editor — это frontend-приложение на React для создания и редактирования интерактивных сценариев.
 
-Currently, two official plugins are available:
+## Возможности
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- просмотр и редактирование информации о сценарии;
+- управление шагами сценария;
+- создание шагов типов `текст`, `выбор`, `конец`;
+- создание и редактирование вариантов выбора;
+- настройка переходов между шагами;
+- поиск по шагам;
+- запуск проекта локально или через Docker.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Стек технологий
 
-## Expanding the ESLint configuration
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Docker
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Требования
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Для запуска проекта локально необходимо установить:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- [Node.js](https://nodejs.org/)
+- npm
+
+Для запуска через Docker необходимо установить:
+
+- Docker Desktop
+
+---
+
+## Установка и запуск локально
+
+### 1. Клонировать репозиторий
+
+```bash
+git clone <ссылка-на-репозиторий>
+cd scenar-editor
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Установить зависимости
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
+
+### 3. Запустить проект
+
+```bash
+npm run dev
+```
+
+### 4. Открыть в браузере
+
+После запуска приложение будет доступно по адресу:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## Запуск через Docker
+
+### 1. Собрать Docker-образ
+
+```bash
+docker build -t scenar-editor .
+```
+
+### 2. Запустить контейнер
+
+```bash
+docker run --rm -p 5173:5173 scenar-editor
+```
+
+### 3. Открыть в браузере
+
+```text
+http://localhost:5173
+```
+
+---
+
+## Структура проекта
+
+```text
+scenar-editor/
+├── src/
+│   ├── pages/
+│   │   └── ScenarioEditorPage.tsx
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── index.css
+├── public/
+├── package.json
+├── vite.config.ts
+├── Dockerfile
+└── .dockerignore
+```
+
+---
+
+## Основные команды
+
+### Запуск в режиме разработки
+
+```bash
+npm run dev
+```
+
+### Сборка проекта
+
+```bash
+npm run build
+```
+
+### Предпросмотр production-сборки
+
+```bash
+npm run preview
+```
+
+---
+
+## Примечания
+
+- По умолчанию проект запускается на порту `5173`.
+- Если порт занят, Vite может автоматически выбрать другой.
+- Для запуска через Docker необходимо, чтобы Docker Desktop был установлен и запущен.
+- Если проект запускается из WSL, необходимо включить WSL Integration в Docker Desktop.
+
+---
+
+## Автор
+
+Проект разработан в рамках учебного проекта **Scenar**.
