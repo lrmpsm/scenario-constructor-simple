@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 type StepType = "start" | "text" | "choice" | "end";
 type AccessType = "public" | "link" | "draft";
@@ -28,6 +28,7 @@ type ScenarioInfo = {
   description: string;
   previewUrl: string;
   accessType: AccessType;
+  hasScoring: boolean;
 };
 
 const initialScenarioInfo: ScenarioInfo = {
@@ -35,6 +36,7 @@ const initialScenarioInfo: ScenarioInfo = {
   description: "Описание сценария",
   previewUrl: "",
   accessType: "draft",
+  hasScoring: false,
 };
 
 const initialSteps: Step[] = [
@@ -154,6 +156,14 @@ export default function ScenarioEditorPage() {
 
   const activeStep = steps.find((step) => step.id === activeStepId) ?? steps[0];
   const activeChoice = activeStep?.choices.find((choice) => choice.id === activeChoiceId) ?? null;
+
+  useEffect(() => {
+    return () => {
+      if (scenarioInfo.previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(scenarioInfo.previewUrl);
+      }
+    };
+  }, [scenarioInfo.previewUrl]);
 
   const filteredSteps = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -336,6 +346,40 @@ export default function ScenarioEditorPage() {
     setStatusText("Изменения сохранены локально");
   };
 
+  const handleToggleScoring = (checked: boolean) => {
+    setScenarioInfo((prev) => ({ ...prev, hasScoring: checked }));
+
+    if (!checked) {
+      setSteps((prev) =>
+        prev.map((step) => ({
+          ...step,
+          choices: step.choices.map((choice) => ({
+            ...choice,
+            scoreDelta: "",
+          })),
+        }))
+      );
+    }
+  };
+
+  const handlePreviewUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setScenarioInfo((prev) => {
+      if (prev.previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(prev.previewUrl);
+      }
+
+      return {
+        ...prev,
+        previewUrl: URL.createObjectURL(file),
+      };
+    });
+
+    setStatusText("Preview сценария обновлен локально");
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
       <div className="mx-auto max-w-7xl space-y-4">
@@ -346,6 +390,9 @@ export default function ScenarioEditorPage() {
               <h1 className="text-2xl font-bold text-slate-900">{scenarioInfo.title}</h1>
               <p className="mt-1 text-sm text-slate-600">
                 Доступ: <span className="font-medium">{getAccessLabel(scenarioInfo.accessType)}</span>
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                Режим: <span className="font-medium">{scenarioInfo.hasScoring ? "Оцениваемый" : "Неоцениваемый"}</span>
               </p>
             </div>
 
@@ -597,9 +644,11 @@ export default function ScenarioEditorPage() {
                         <p className="text-sm text-slate-700">{truncate(choice.text)}</p>
                         <div className="mt-3 space-y-1 text-xs text-slate-500">
                           <p>Следующий шаг: {nextStepTitle ?? "не указан"}</p>
-                          <p>
-                            Изменение счета: {choice.scoreDelta === "" ? "не указано" : choice.scoreDelta}
-                          </p>
+                          {scenarioInfo.hasScoring && (
+                            <p>
+                              Изменение счета: {choice.scoreDelta === "" ? "не указано" : choice.scoreDelta}
+                            </p>
+                          )}
                         </div>
                       </button>
                     );
@@ -688,30 +737,25 @@ export default function ScenarioEditorPage() {
                   />
                 </label>
 
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-slate-700">Изменение счета пользователя</span>
-                  <input
-                    type="number"
-                    value={activeChoice.scoreDelta}
-                    onChange={(e) =>
-                      setChoiceField(
-                        "scoreDelta",
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
-                    }
-                    placeholder="Например: 1, 0, -2"
-                    className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
-                  />
-                </label>
+                {scenarioInfo.hasScoring && (
+                  <label className="block">
+                    <span className="mb-1 block text-sm font-medium text-slate-700">Изменение счета пользователя</span>
+                    <input
+                      type="number"
+                      value={activeChoice.scoreDelta}
+                      onChange={(e) =>
+                        setChoiceField(
+                          "scoreDelta",
+                          e.target.value === "" ? "" : Number(e.target.value)
+                        )
+                      }
+                      placeholder="Например: 1, 0, -2"
+                      className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+                    />
+                  </label>
+                )}
 
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
-                  >
-                    Сохранить изменения
-                  </button>
                   <button
                     type="button"
                     onClick={handleDeleteChoice}
@@ -765,13 +809,13 @@ export default function ScenarioEditorPage() {
                 />
               </label>
 
-              <label className="block">
+              <label className="block md:col-span-2">
                 <span className="mb-1 block text-sm font-medium text-slate-700">Preview сценария</span>
                 <input
-                  value={scenarioInfo.previewUrl}
-                  onChange={(e) => setScenarioInfo((prev) => ({ ...prev, previewUrl: e.target.value }))}
-                  placeholder="URL preview"
-                  className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-900"
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={handlePreviewUpload}
+                  className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:opacity-90"
                 />
               </label>
 
@@ -791,6 +835,35 @@ export default function ScenarioEditorPage() {
                   <option value="link">По ссылке</option>
                   <option value="draft">Черновик</option>
                 </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Режим сценария</span>
+                <button
+                  type="button"
+                  onClick={() => handleToggleScoring(!scenarioInfo.hasScoring)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-2xl border px-4 py-2 text-sm font-medium transition",
+                    scenarioInfo.hasScoring
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
+                  )}
+                >
+                  <span>{scenarioInfo.hasScoring ? "Оцениваемый" : "Неоцениваемый"}</span>
+                  <span
+                    className={cn(
+                      "relative h-6 w-11 rounded-full transition",
+                      scenarioInfo.hasScoring ? "bg-white/20" : "bg-slate-200"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition",
+                        scenarioInfo.hasScoring ? "left-[22px]" : "left-0.5"
+                      )}
+                    />
+                  </span>
+                </button>
               </label>
             </div>
 
